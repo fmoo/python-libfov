@@ -14,9 +14,18 @@
  * s.circle(None, None, 4, 4, 3)
  */
 
+/**
+ * Ugly hack to sneak the PyObject into the C API
+ * so that we can properly route the callbacks back 
+ * to their assigned callbacks without cheating.
+ */
+typedef struct {
+  void *orig_map;
+  struct pyfov_settings *settings;
+} map_wrapper;
 
 /**
- * Define a wrapper around the core C settings,
+ * Define the wrapper around the core C settings,
  * since our python callbacks won't match the signatures
  * of the underlying C library.
  */
@@ -38,12 +47,70 @@ typedef struct {
    * Python callback for applying lighting 
    */
   PyObject *apply_lighting_function;
-
-  /**
-   * Index into fov_settings dictionary
-   */
-  int identifier;
 } pyfov_SettingsObject;
+
+/**
+ * Primary Interface Methods
+ */
+
+/**
+ * Wrapper for fov_beam
+ */
+static PyObject *
+pyfov_beam(pyfov_SettingsObject *self, PyObject *args) {
+  void *map, *src;
+  int source_x, source_y;
+  unsigned radius;
+  struct map_wrapper wrap;
+
+  if (!PyArg_ParseTuple(args, "ooiiI", &map, &src,
+                        &source_x, &source_y, &radius))
+    return NULL;
+
+  // Initialize wrap to pass as map instead of *map.
+  wrap.orig_map = map;
+  wrap.pyfov_settings = self;
+
+  fov_beam(self->settings, wrap, src,
+           source_x, source_y, radius);
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+/**
+ * Wrapper for fov_circle
+ */
+static PyObject *
+pyfov_circle(pyfov_SettingsObject *self, PyObject *args) {
+  void *map, *src;
+  int source_x, source_y;
+  unsigned radius;
+  fov_direction_type direction;
+  float angle;
+  struct map_wrapper wrap;
+
+  if (!PyArg_ParseTuple(args, "ooiiIIf", &map, &src,
+                        &source_x, &source_y, &radius,
+                        &direction, &angle))
+    return NULL;
+
+  // Initialize wrap to pass as map instead of *map.
+  wrap.orig_map = map;
+  wrap.pyfov_settings = self;
+
+  fov_circle(self->settings, wrap, src,
+             source_x, source_y, radius,
+             direction, angle);
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+
+/**
+ * GetSet Methods
+ */
 
 /**
  * Settings Type Definition
@@ -76,13 +143,6 @@ static PyTypeObject pyfov_SettingsType = {
 /**
  * pyfov_Settings functions
  */
-
-
-typedef struct {
-  void *orig_map;
-  struct pyfov_settings *settings;
-
-} map_wrapper;
 
 
 static bool
