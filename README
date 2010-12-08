@@ -1,0 +1,22 @@
+python-libfov is a CPython extension module that wraps libfov with a native python interface. 
+
+## Alternatives
+* [[elemel's pure python implementation|https://github.com/elemel/python-fov]].  Implements fov_circle only.
+* Don't use python.
+
+# Examples:
+```python
+import fov
+s = fov.Settings()
+map = [[1, 0, 0, 0],
+       [1, 0, 1, 0],
+       [1, 0, 0, 0],
+       [1, 1, 1, 1]]
+s.opacity_test_function = lambda m, x, y: m[y][x]
+s.circle(map, None, 1, 2)
+
+```
+
+# See Also
+* [[libfov on Google Code|http://code.google.com/p/libfov/]]
+* [[pyfov on pypi (defunct)|http://pypi.python.org/pypi/pyfov/]]
