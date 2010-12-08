@@ -238,8 +238,8 @@ static PyMethodDef FovModuleMethods[] = {
 };
 
 static PyMethodDef FovObjectMethods[] = {
-  {"fov.Settings.beam", pyfov_beam, 0, NULL},
-  {"fov.Settings.circle", pyfov_circle, 0, NULL},
+  {"beam", pyfov_beam, 0, NULL},
+  {"circle", pyfov_circle, 0, NULL},
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
