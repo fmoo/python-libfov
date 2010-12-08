@@ -111,40 +111,11 @@ pyfov_circle(PyObject *self, PyObject *args) {
 
 
 /**
- * GetSet Methods
- */
-
-/**
- * Settings Type Definition
+ * Stub for SettingsType
  */
 static PyTypeObject pyfov_SettingsType = {
   PyObject_HEAD_INIT(NULL)
-  0,                            /* ob_size */
-  "fov.Settings",               /* tp_name */
-  sizeof(pyfov_SettingsObject), /* tp_basicsize */
-  0,                            /* tp_itemsize */
-  0,                            /* tp_dealloc */
-  0,                            /* tp_print */
-  0,                            /* tp_getattr */
-  0,                            /* tp_setattr */
-  0,                            /* tp_compare */
-  0,                            /* tp_repr */
-  0,                            /* tp_as_number */
-  0,                            /* tp_as_sequence */
-  0,                            /* tp_as_mapping */
-  0,                            /* tp_hash */
-  0,                            /* tp_call */
-  0,                            /* tp_str */
-  0,                            /* tp_getattro */
-  0,                            /* tp_setattro */
-  0,                            /* tp_as_buffer */
-  Py_TPFLAGS_DEFAULT,           /* tp_flags */
-  "Settings objects",           /* tp_doc */  
 };
-
-/**
- * pyfov_Settings functions
- */
 
 
 static bool
@@ -206,6 +177,8 @@ _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
 
 static PyMethodDef FovModuleMethods[];
 
+static void init_fov_settings_type(PyTypeObject *t);
+
 PyMODINIT_FUNC
 initfov(void)
 {
@@ -217,7 +190,7 @@ initfov(void)
     return;
 
   // Type definition
-  pyfov_SettingsType.tp_new = PyType_GenericNew;
+  init_fov_settings_type(&pyfov_SettingsType);
 
   if (PyType_Ready(&pyfov_SettingsType) < 0)
     return;
@@ -264,3 +237,14 @@ static PyMethodDef FovModuleMethods[] = {
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
+static void
+init_fov_settings_type(PyTypeObject *t) {
+  t->tp_name = "fov.Settings";
+  t->tp_basicsize = sizeof(pyfov_SettingsObject);
+  t->tp_flags = Py_TPFLAGS_DEFAULT;
+  t->tp_doc = "FOV Settings Object";
+
+  // Use a generic new method (inits members to 0/NULL)
+  t->tp_new = PyType_GenericNew;
+  t->tp_methods = FovObjectMethods;
+}
