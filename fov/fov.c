@@ -15,16 +15,6 @@
  */
 
 /**
- * Ugly hack to sneak the PyObject into the C API
- * so that we can properly route the callbacks back 
- * to their assigned callbacks without cheating.
- */
-typedef struct {
-  void *orig_map;
-  struct pyfov_settings *settings;
-} map_wrapper;
-
-/**
  * Define the wrapper around the core C settings,
  * since our python callbacks won't match the signatures
  * of the underlying C library.
@@ -48,6 +38,16 @@ typedef struct {
    */
   PyObject *apply_lighting_function;
 } pyfov_SettingsObject;
+
+/**
+ * Ugly hack to sneak the PyObject into the C API
+ * so that we can properly route the callbacks back
+ * to their assigned callbacks without cheating.
+ */
+typedef struct {
+  void *orig_map;
+  pyfov_SettingsObject *settings;
+} map_wrapper;
 
 /**
  * Primary Interface Methods
