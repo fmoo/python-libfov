@@ -237,6 +237,12 @@ static PyMethodDef FovModuleMethods[] = {
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
+static PyMethodDef FovObjectMethods[] = {
+  {"fov.Settings.beam", pyfov_beam, 0, NULL},
+  {"fov.Settings.circle", pyfov_circle, 0, NULL},
+  {NULL, NULL, 0, NULL} /* Sentinel */
+};
+
 static void
 init_fov_settings_type(PyTypeObject *t) {
   t->tp_name = "fov.Settings";
