@@ -57,22 +57,27 @@ typedef struct {
  * Wrapper for fov_beam
  */
 static PyObject *
-pyfov_beam(pyfov_SettingsObject *self, PyObject *args) {
+pyfov_beam(PyObject *self, PyObject *args) {
+  pyfov_SettingsObject *settings = (pyfov_SettingsObject *)self;
   void *map, *src;
   int source_x, source_y;
   unsigned radius;
-  struct map_wrapper wrap;
+  fov_direction_type direction;
+  float angle;
+  map_wrapper wrap;
 
-  if (!PyArg_ParseTuple(args, "ooiiI", &map, &src,
-                        &source_x, &source_y, &radius))
+  if (!PyArg_ParseTuple(args, "ooiiIIf", &map, &src,
+                        &source_x, &source_y, &radius,
+                        &direction, &angle))
     return NULL;
 
   // Initialize wrap to pass as map instead of *map.
   wrap.orig_map = map;
-  wrap.pyfov_settings = self;
+  wrap.settings = settings;
 
-  fov_beam(self->settings, wrap, src,
-           source_x, source_y, radius);
+  fov_beam(&settings->settings, &wrap, src,
+           source_x, source_y, radius,
+           direction, angle);
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -82,26 +87,23 @@ pyfov_beam(pyfov_SettingsObject *self, PyObject *args) {
  * Wrapper for fov_circle
  */
 static PyObject *
-pyfov_circle(pyfov_SettingsObject *self, PyObject *args) {
+pyfov_circle(PyObject *self, PyObject *args) {
+  pyfov_SettingsObject *settings = (pyfov_SettingsObject *)self;
   void *map, *src;
   int source_x, source_y;
   unsigned radius;
-  fov_direction_type direction;
-  float angle;
-  struct map_wrapper wrap;
+  map_wrapper wrap;
 
-  if (!PyArg_ParseTuple(args, "ooiiIIf", &map, &src,
-                        &source_x, &source_y, &radius,
-                        &direction, &angle))
+  if (!PyArg_ParseTuple(args, "ooiiI", &map, &src,
+                        &source_x, &source_y, &radius))
     return NULL;
 
   // Initialize wrap to pass as map instead of *map.
   wrap.orig_map = map;
-  wrap.pyfov_settings = self;
+  wrap.settings = settings;
 
-  fov_circle(self->settings, wrap, src,
-             source_x, source_y, radius,
-             direction, angle);
+  fov_circle(&settings->settings, &wrap, src,
+             source_x, source_y, radius);
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -147,25 +149,59 @@ static PyTypeObject pyfov_SettingsType = {
 
 static bool
 _pyfov_opacity_test_function(void *map, int x, int y) {
+  PyObject *arglist;
+  PyObject *result;
   map_wrapper *wrap = (map_wrapper *)map;
+  bool test_func_result;
 
-  // TODO call wrap->settings->opacity_test_function()
-  // with (wrap->orig_map, x, y) as args
-  return false;
+  // Pack up the C return values to python objects
+  arglist = Py_BuildValue("(Oii)", (PyObject *)wrap->orig_map, x, y);
+  result = PyObject_CallObject(wrap->settings->opacity_test_function,
+                               arglist);
+
+  // decref the O arguments since py_BuildValue() increments refs on these
+  Py_DECREF((PyObject *)wrap->orig_map);
+  Py_DECREF(arglist);
+
+  // If the callback threw an exception, we trace back through the C code...
+  // We should really stop the execution of additional callbacks, but I'm not
+  // sure if this can be done without doing something super gnarly with the
+  // raw C settings object.
+  if (result == NULL)
+    return false;
+
+  test_func_result = (bool)PyInt_AsLong(result);
+  Py_DECREF(result);
+
+  return test_func_result;
 }
 
 static void
 _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
                                void *src) {
+  PyObject *arglist;
+  PyObject *result;
   map_wrapper *wrap = (map_wrapper *)map;
 
-  // fov_circle and fov_beam are called with python objects instead of raw
-  // c pointers.  We'll cast the void * to a PyObject * before injvoking the
-  // callback
+  // Pack up the C return values to python objects
+  arglist = Py_BuildValue("(OiiiiO)", (PyObject *)wrap->orig_map, x, y,
+                          dx, dy, (PyObject *)src);
+  result = PyObject_CallObject(wrap->settings->apply_lighting_function,
+                               arglist);
   
-  // TODO call wrap->settings->apply_lighting_function with
-  // (wrap->orig_map, x, y, dx, dy, src) as args
-  //
+  // decref the O arguments since py_BuildValue() increments refs on these
+  Py_DECREF((PyObject *)wrap->orig_map);
+  Py_DECREF((PyObject *)src);
+  Py_DECREF(arglist);
+
+  // If the callback threw an exception, we trace back through the C code...
+  // We should really stop the execution of additional callbacks, but I'm not
+  // sure if this can be done without doing something super gnarly with the
+  // raw C settings object.
+  if (result == NULL)
+    return;
+
+  Py_DECREF(result);
 }
 
 static PyMethodDef FovModuleMethods[];
