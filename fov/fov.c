@@ -50,8 +50,34 @@ typedef struct {
 } map_wrapper;
 
 /**
+ * TODO: Implement a dummy opacity test function and a dummy apply
+ * lighting function to initialize all pyfov_Settings objects to.
+ */
+
+/**
  * Primary Interface Methods
  */
+static int
+pyfov_Settings_init(pyfov_Settings *self, PyObject *args, PyObject *kwargs) {
+  static char *kwlist[] = {NULL, };
+
+  // Our __init__ function doesn't take any arguments...
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|", kwlist)) {
+    return -1;
+  }
+
+  // Init the underlying settings datastructure
+  fov_settings_init(&self->settings);
+  return 0;
+}
+
+static void
+pyfov_Settings_dealloc(pyfov_Settings *self)
+{
+  // Free the underlying implementation
+  fov_settings_free(&self->settings);
+  self->ob_type->tp_free(self);
+}
 
 /**
  * Wrapper for fov_beam
@@ -236,8 +262,9 @@ static PyMethodDef FovModuleMethods[] = {
 };
 
 static PyMethodDef FovObjectMethods[] = {
-  // We set METH_VARARGS as the calling convention, even though
-  // we require all the args.
+  // We set METH_VARARGS to require a sane calling convention, even
+  // though we require all the args.  PyArg_ParseTuple does some
+  // awesome error handling.
   {"beam", (PyCFunction)pyfov_Settings_beam, METH_VARARGS, NULL},
   {"circle", (PyCFunction)pyfov_Settings_circle, METH_VARARGS, NULL},
   {NULL, NULL, 0, NULL} /* Sentinel */
@@ -249,6 +276,12 @@ init_fov_settings_type(PyTypeObject *t) {
   t->tp_basicsize = sizeof(pyfov_Settings);
   t->tp_flags = Py_TPFLAGS_DEFAULT;
   t->tp_doc = "FOV Settings Object";
+
+  // We cast these, since their real signatures pass pyfov_Settings *
+  // instead of PyObject *, and we'd like the compiler to implicitly cast
+  // the PyObject * to the type we care about.
+  t->tp_init = (initproc)pyfov_Settings_init;
+  t->tp_dealloc = (destructor)pyfov_Settings_dealloc;
 
   // Use a generic new method (inits members to 0/NULL)
   t->tp_new = PyType_GenericNew;
