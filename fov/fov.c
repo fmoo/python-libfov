@@ -37,7 +37,7 @@ typedef struct {
    * Python callback for applying lighting 
    */
   PyObject *apply_lighting_function;
-} pyfov_SettingsObject;
+} pyfov_Settings;
 
 /**
  * Ugly hack to sneak the PyObject into the C API
@@ -46,7 +46,7 @@ typedef struct {
  */
 typedef struct {
   void *orig_map;
-  pyfov_SettingsObject *settings;
+  pyfov_Settings *settings;
 } map_wrapper;
 
 /**
@@ -57,8 +57,7 @@ typedef struct {
  * Wrapper for fov_beam
  */
 static PyObject *
-pyfov_beam(PyObject *self, PyObject *args) {
-  pyfov_SettingsObject *settings = (pyfov_SettingsObject *)self;
+pyfov_Settings_beam(pyfov_Settings *self, PyObject *args) {
   void *map, *src;
   int source_x, source_y;
   unsigned radius;
@@ -73,9 +72,9 @@ pyfov_beam(PyObject *self, PyObject *args) {
 
   // Initialize wrap to pass as map instead of *map.
   wrap.orig_map = map;
-  wrap.settings = settings;
+  wrap.settings = self;
 
-  fov_beam(&settings->settings, &wrap, src,
+  fov_beam(&self->settings, &wrap, src,
            source_x, source_y, radius,
            direction, angle);
 
@@ -87,8 +86,7 @@ pyfov_beam(PyObject *self, PyObject *args) {
  * Wrapper for fov_circle
  */
 static PyObject *
-pyfov_circle(PyObject *self, PyObject *args) {
-  pyfov_SettingsObject *settings = (pyfov_SettingsObject *)self;
+pyfov_Settings_circle(pyfov_Settings *self, PyObject *args) {
   void *map, *src;
   int source_x, source_y;
   unsigned radius;
@@ -100,9 +98,9 @@ pyfov_circle(PyObject *self, PyObject *args) {
 
   // Initialize wrap to pass as map instead of *map.
   wrap.orig_map = map;
-  wrap.settings = settings;
+  wrap.settings = self;
 
-  fov_circle(&settings->settings, &wrap, src,
+  fov_circle(&self->settings, &wrap, src,
              source_x, source_y, radius);
 
   Py_INCREF(Py_None);
@@ -238,15 +236,17 @@ static PyMethodDef FovModuleMethods[] = {
 };
 
 static PyMethodDef FovObjectMethods[] = {
-  {"beam", pyfov_beam, 0, NULL},
-  {"circle", pyfov_circle, 0, NULL},
+  // We set METH_VARARGS as the calling convention, even though
+  // we require all the args.
+  {"beam", (PyCFunction)pyfov_Settings_beam, METH_VARARGS, NULL},
+  {"circle", (PyCFunction)pyfov_Settings_circle, METH_VARARGS, NULL},
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
 static void
 init_fov_settings_type(PyTypeObject *t) {
   t->tp_name = "fov.Settings";
-  t->tp_basicsize = sizeof(pyfov_SettingsObject);
+  t->tp_basicsize = sizeof(pyfov_Settings);
   t->tp_flags = Py_TPFLAGS_DEFAULT;
   t->tp_doc = "FOV Settings Object";
 
