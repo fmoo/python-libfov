@@ -58,10 +58,10 @@ typedef struct {
   pyfov_Settings *settings;
 } map_wrapper;
 
-/**
- * TODO: Implement a dummy opacity test function and a dummy apply
- * lighting function to initialize all pyfov_Settings objects to.
- */
+// Global pyfov callbacks for all calls to fov_beam, etc
+static bool _pyfov_opacity_test_function(void *map, int x, int y);
+static void _pyfov_apply_lighting_function(void *map, int x, int y,
+                                           int dx, int dy, void *src);
 
 /**
  * Primary Interface Methods
@@ -80,6 +80,14 @@ pyfov_Settings_init(pyfov_Settings *self, PyObject *args, PyObject *kwargs) {
 
   // Init the underlying settings datastructure
   fov_settings_init(&self->settings);
+
+  // Set the pyfov handlers internally for all instances.
+  // these are ALWAYS handles by these functions
+  fov_settings_set_opacity_test_function(&self->settings,
+    _pyfov_opacity_test_function);
+  fov_settings_set_apply_lighting_function(&self->settings,
+    _pyfov_apply_lighting_function);
+
   return 0;
 }
 
@@ -161,6 +169,10 @@ _pyfov_opacity_test_function(void *map, int x, int y) {
   map_wrapper *wrap = (map_wrapper *)map;
   bool test_func_result;
 
+  // Early out if no user-callback was set
+  if (wrap->settings->opacity_test_function == Py_None)
+    return false;
+
   // Pack up the C return values to python objects
   arglist = Py_BuildValue("(Oii)", (PyObject *)wrap->orig_map, x, y);
   result = PyObject_CallObject(wrap->settings->opacity_test_function,
@@ -189,6 +201,10 @@ _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
   PyObject *arglist;
   PyObject *result;
   map_wrapper *wrap = (map_wrapper *)map;
+
+  // Early out if no user-callback was set
+  if (wrap->settings->apply_lighting_function == Py_None)
+    return;
 
   // Pack up the C return values to python objects
   arglist = Py_BuildValue("(OiiiiO)", (PyObject *)wrap->orig_map, x, y,
