@@ -265,7 +265,7 @@ _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
   Py_DECREF(result);
 }
 
-static PyMethodDef FovModuleMethods[];
+static PyMethodDef pyfov_methods[];
 
 static void init_fov_settings_type(PyTypeObject *t);
 
@@ -275,7 +275,7 @@ initfov(void)
   PyObject *m;
 
   // Register module global functions
-  m = Py_InitModule("fov", FovModuleMethods);
+  m = Py_InitModule("fov", pyfov_methods);
   if (m == NULL)
     return;
 
@@ -323,11 +323,11 @@ initfov(void)
 
 }
 
-static PyMethodDef FovModuleMethods[] = {
+static PyMethodDef pyfov_methods[] = {
   {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
-static PyMethodDef FovObjectMethods[] = {
+static PyMethodDef pyfov_Settings_methods[] = {
   // We set METH_VARARGS to require a sane calling convention, even
   // though we require all the args.  PyArg_ParseTuple does some
   // awesome error handling.
@@ -351,6 +351,6 @@ init_fov_settings_type(PyTypeObject *t) {
 
   // Use a generic new method (inits members to 0/NULL)
   t->tp_new = PyType_GenericNew;
-  t->tp_methods = FovObjectMethods;
+  t->tp_methods = pyfov_Settings_methods;
   t->tp_getset = pyfov_Settings_properties;
 }
