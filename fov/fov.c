@@ -212,8 +212,6 @@ _pyfov_opacity_test_function(void *map, int x, int y) {
   result = PyObject_CallObject(wrap->settings->opacity_test_function,
                                arglist);
 
-  // decref the O arguments since py_BuildValue() increments refs on these
-  Py_DECREF((PyObject *)wrap->orig_map);
   Py_DECREF(arglist);
 
   // If the callback threw an exception, we trace back through the C code...
@@ -248,9 +246,6 @@ _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
   result = PyObject_CallObject(wrap->settings->apply_lighting_function,
                                arglist);
   
-  // decref the O arguments since py_BuildValue() increments refs on these
-  Py_DECREF((PyObject *)wrap->orig_map);
-  Py_DECREF((PyObject *)src);
   Py_DECREF(arglist);
 
   // If the callback threw an exception, we trace back through the C code...
