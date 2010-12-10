@@ -101,6 +101,31 @@ pyfov_Settings_dealloc(pyfov_Settings *self)
 }
 
 /**
+ * Property implementations
+ */
+static PyObject *
+pyfov_Settings_get_opacity_test_function(pyfov_Settings *self, void *data) {
+  Py_INCREF(self->opacity_test_function);
+  return self->opacity_test_function;
+}
+
+static int
+pyfov_Settings_set_opacity_test_function(pyfov_Settings *self, PyObject *cb,
+                                         void *data) {
+  ASSIGN_REFS(self->opacity_test_function, cb);
+  return 0;
+}
+
+static PyGetSetDef pyfov_Settings_properties[] = {
+  {"opacity_test_function",
+   (getter)pyfov_Settings_get_opacity_test_function,
+   (setter)pyfov_Settings_set_opacity_test_function,
+   "", NULL},
+  /* Sentinel */
+  {NULL, NULL, NULL, NULL, NULL},
+};
+
+/**
  * Wrapper for fov_beam
  */
 static PyObject *
@@ -327,4 +352,5 @@ init_fov_settings_type(PyTypeObject *t) {
   // Use a generic new method (inits members to 0/NULL)
   t->tp_new = PyType_GenericNew;
   t->tp_methods = FovObjectMethods;
+  t->tp_getset = pyfov_Settings_properties;
 }
