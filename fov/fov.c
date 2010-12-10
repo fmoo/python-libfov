@@ -56,6 +56,7 @@ typedef struct {
 typedef struct {
   void *orig_map;
   pyfov_Settings *settings;
+  bool threw_exception;
 } map_wrapper;
 
 // Global pyfov callbacks for all calls to fov_beam, etc
@@ -119,10 +120,14 @@ pyfov_Settings_beam(pyfov_Settings *self, PyObject *args) {
   // Initialize wrap to pass as map instead of *map.
   wrap.orig_map = map;
   wrap.settings = self;
+  wrap.threw_exception = false;
 
   fov_beam(&self->settings, &wrap, src,
            source_x, source_y, radius,
            direction, angle);
+
+  if (wrap.threw_exception)
+    return NULL;
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -145,9 +150,13 @@ pyfov_Settings_circle(pyfov_Settings *self, PyObject *args) {
   // Initialize wrap to pass as map instead of *map.
   wrap.orig_map = map;
   wrap.settings = self;
+  wrap.threw_exception = false;
 
   fov_circle(&self->settings, &wrap, src,
              source_x, source_y, radius);
+
+  if (wrap.threw_exception)
+    return NULL;
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -186,8 +195,10 @@ _pyfov_opacity_test_function(void *map, int x, int y) {
   // We should really stop the execution of additional callbacks, but I'm not
   // sure if this can be done without doing something super gnarly with the
   // raw C settings object.
-  if (result == NULL)
+  if (result == NULL) {
+    wrap->threw_exception = true;
     return false;
+  }
 
   test_func_result = (bool)PyInt_AsLong(result);
   Py_DECREF(result);
@@ -221,8 +232,10 @@ _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
   // We should really stop the execution of additional callbacks, but I'm not
   // sure if this can be done without doing something super gnarly with the
   // raw C settings object.
-  if (result == NULL)
+  if (result == NULL) {
+    wrap->threw_exception = true;
     return;
+  }
 
   Py_DECREF(result);
 }
