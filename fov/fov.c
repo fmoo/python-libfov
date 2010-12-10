@@ -1,6 +1,15 @@
 #include <Python.h>
 #include "fov/fov.h"
 
+#define SET_INCREF(A, B) \
+  Py_INCREF(B); \
+  A = B;
+
+#define ASSIGN_REFS(A, B) \
+  Py_DECREF(A); \
+  Py_INCREF(B); \
+  A = B;
+
 /**
  * pyfov provides an object oriented wrapper for libfov.
  *
@@ -65,6 +74,9 @@ pyfov_Settings_init(pyfov_Settings *self, PyObject *args, PyObject *kwargs) {
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|", kwlist)) {
     return -1;
   }
+
+  SET_INCREF(self->opacity_test_function, Py_None);
+  SET_INCREF(self->apply_lighting_function, Py_None);
 
   // Init the underlying settings datastructure
   fov_settings_init(&self->settings);
