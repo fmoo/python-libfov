@@ -137,7 +137,7 @@ pyfov_Settings_beam(pyfov_Settings *self, PyObject *args) {
   float angle;
   map_wrapper wrap;
 
-  if (!PyArg_ParseTuple(args, "ooiiIIf", &map, &src,
+  if (!PyArg_ParseTuple(args, "OOiiIIf", &map, &src,
                         &source_x, &source_y, &radius,
                         &direction, &angle))
     return NULL;
@@ -168,7 +168,7 @@ pyfov_Settings_circle(pyfov_Settings *self, PyObject *args) {
   unsigned radius;
   map_wrapper wrap;
 
-  if (!PyArg_ParseTuple(args, "ooiiI", &map, &src,
+  if (!PyArg_ParseTuple(args, "OOiiI", &map, &src,
                         &source_x, &source_y, &radius))
     return NULL;
 
