@@ -32,7 +32,7 @@ typedef struct {
   PyObject_HEAD
 
   /**
-   * Raw C settings object.  This will get passed to all the setters fo
+   * Raw C settings object.  This will get passed to all the setters for
    * libfov.
    */
   fov_settings_type settings;
@@ -43,7 +43,7 @@ typedef struct {
   PyObject *opacity_test_function;
 
   /**
-   * Python callback for applying lighting 
+   * Python callback for applying lighting
    */
   PyObject *apply_lighting_function;
 } pyfov_Settings;
@@ -103,6 +103,10 @@ pyfov_Settings_dealloc(pyfov_Settings *self)
 /**
  * Property implementations
  */
+
+/**
+ * opacity_test_function
+ */
 static PyObject *
 pyfov_Settings_get_opacity_test_function(pyfov_Settings *self, void *data) {
   Py_INCREF(self->opacity_test_function);
@@ -116,10 +120,99 @@ pyfov_Settings_set_opacity_test_function(pyfov_Settings *self, PyObject *cb,
   return 0;
 }
 
+/**
+ * apply_lighting_function
+ */
+static PyObject *
+pyfov_Settings_get_apply_lighting_function(pyfov_Settings *self, void *data) {
+  Py_INCREF(self->apply_lighting_function);
+  return self->apply_lighting_function;
+}
+
+static int
+pyfov_Settings_set_apply_lighting_function(pyfov_Settings *self, PyObject *cb,
+                                           void *data) {
+  ASSIGN_REFS(self->apply_lighting_function, cb);
+  return 0;
+}
+
+/**
+ * shape
+ */
+static PyObject *
+pyfov_Settings_get_shape(pyfov_Settings *self, void *data) {
+  return PyInt_FromLong(self->settings.shape);
+}
+
+static int
+pyfov_Settings_set_shape(pyfov_Settings *self, PyObject *shape,
+                         void *data) {
+  long lshape = PyInt_AsLong(shape);
+  if (PyErr_Occurred()) {
+    return -1;
+  }
+  fov_settings_set_shape(&self->settings, lshape);
+  return 0;
+}
+
+/**
+ * corner_peek
+ */
+static PyObject *
+pyfov_Settings_get_corner_peek(pyfov_Settings *self, void *data) {
+  return PyInt_FromLong(self->settings.corner_peek);
+}
+
+static int
+pyfov_Settings_set_corner_peek(pyfov_Settings *self, PyObject *corner_peek,
+                               void *data) {
+  long lcorner_peek = PyInt_AsLong(corner_peek);
+  if (PyErr_Occurred()) {
+    return -1;
+  }
+  fov_settings_set_corner_peek(&self->settings, lcorner_peek);
+  return 0;
+}
+
+/**
+ * opaque_apply
+ */
+static PyObject *
+pyfov_Settings_get_opaque_apply(pyfov_Settings *self, void *data) {
+  return PyInt_FromLong(self->settings.opaque_apply);
+}
+
+static int
+pyfov_Settings_set_opaque_apply(pyfov_Settings *self, PyObject *opaque_apply,
+                                void *data) {
+  long lopaque_apply = PyInt_AsLong(opaque_apply);
+  if (PyErr_Occurred()) {
+    return -1;
+  }
+  fov_settings_set_opaque_apply(&self->settings, lopaque_apply);
+  return 0;
+}
+
 static PyGetSetDef pyfov_Settings_properties[] = {
   {"opacity_test_function",
    (getter)pyfov_Settings_get_opacity_test_function,
    (setter)pyfov_Settings_set_opacity_test_function,
+   "", NULL},
+  {"apply_lighting_function",
+   (getter)pyfov_Settings_get_apply_lighting_function,
+   (setter)pyfov_Settings_set_apply_lighting_function,
+   "", NULL},
+  {"shape",
+   (getter)pyfov_Settings_get_shape,
+   (setter)pyfov_Settings_set_shape,
+   "", NULL},
+  {"corner_peek",
+   (getter)pyfov_Settings_get_corner_peek,
+   (setter)pyfov_Settings_set_corner_peek,
+   "", NULL},
+  {"opaque_apply",
+   (getter)pyfov_Settings_get_opaque_apply,
+   (setter)pyfov_Settings_set_opaque_apply,
    "", NULL},
   /* Sentinel */
   {NULL, NULL, NULL, NULL, NULL},
@@ -245,7 +338,7 @@ _pyfov_apply_lighting_function(void *map, int x, int y, int dx, int dy,
                           dx, dy, (PyObject *)src);
   result = PyObject_CallObject(wrap->settings->apply_lighting_function,
                                arglist);
-  
+
   Py_DECREF(arglist);
 
   // If the callback threw an exception, we trace back through the C code...
